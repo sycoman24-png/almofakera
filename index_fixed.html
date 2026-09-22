@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المفكرة النفسية - التحليل والذكاء</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+        .container {
+            max-width: 680px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3, h4 { text-align: center; color: #00796b; margin-top: 0; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 13px; }
+        input[type="text"], input[type="password"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #b2dfdb;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        textarea { height: 90px; resize: vertical; }
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12.5px;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            transition: all 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.65; cursor: wait; transform: none; }
+        .btn-analyze { background-color: #0288d1; }
+        .btn-save { background-color: #00796b; }
+        .btn-download { background-color: #2e7d32; }
+        .btn-global { background-color: #6a1b9a; }
+        .btn-danger { background-color: #d32f2f; }
+        .btn-upload { background-color: #ef6c00; }
+        .btn-media { background-color: #455a64; }
+        .action-buttons { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #b2dfdb;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #555;
+        }
+        .tab-btn.active { color: #00796b; border-bottom: 3px solid #00796b; }
+        .hidden { display: none !important; }
+        .user-header {
+            background-color: #e0f2f1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-right: 4px solid #00796b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .card-date { font-size: 11px; color: #666; }
+        .result-card {
+            background-color: #f3e5f5;
+            border-right: 4px solid #8e24aa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            line-height: 1.7;
+            font-size: 13px;
+        }
+        .media-preview-container { margin-top: 8px; max-width: 100%; }
+        .media-preview-container img, .media-preview-container video {
+            max-width: 100%;
+            max-height: 220px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            display: block;
+            margin-top: 5px;
+        }
+        .bulk-actions {
+            background: #f5f5f5;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+        .api-box {
+            background: #fff8e1;
+            border: 1px dashed #ffb300;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 12.5px;
+        }
+    </style>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- Mammoth for DOCX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <div id="authScreen">
+        <h2>مرحباً بك في المفكرة النفسية الذكية 🧠📝</h2>
+        <div class="tabs">
+            <button type="button" class="tab-btn active" onclick="switchTab('login')">تسجيل الدخول</button>
+            <button type="button" class="tab-btn" onclick="switchTab('register')">إنشاء حساب</button>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <label>اسم المستخدم</label>
+                <input type="text" id="loginUser" required placeholder="مثال: أحمد محمد">
+            </div>
+            <div class="input-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="loginPass" required>
+            </div>
+            <button type="submit" id="btnLoginSubmit" class="btn btn-save" style="width:100%;">دخول</button>
+        </form>
+
+        <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+            <div class="input-group">
+                <label>اسم المستخدم</label>
+                <input type="text" id="regName" required placeholder="الاسم الكامل">
+            </div>
+            <div class="input-group">
+                <label>الجنس</label>
+                <select id="regGender" required>
+                    <option value="">اختر الجنس...</option>
+                    <option value="ذكر">ذكر</option>
+                    <option value="أنثى">أنثى</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>العمر</label>
+                <input type="number" id="regAge" min="1" max="120" required placeholder="العمر بالسنوات">
+            </div>
+            <div class="input-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="regPass" required>
+            </div>
+            <button type="submit" id="btnRegSubmit" class="btn btn-save" style="width:100%;">إنشاء الحساب والتسجيل</button>
+        </form>
+    </div>
+
+    <div id="appScreen" class="hidden">
+        <div class="user-header">
+            <span id="welcomeMessage" style="font-weight:bold; font-size:13px;">مرحباً!</span>
+            <button type="button" class="btn btn-danger" onclick="handleLogout()">خروج</button>
+        </div>
+
+        <h3>تدوين المذكرات والوسائط ✍️📷🎙️</h3>
+
+        <div class="input-group">
+            <textarea id="journalInput" placeholder="اكتب يومياتك أو ملاحظاتك هنا..."></textarea>
+        </div>
+
+        <div id="mediaPreviewArea" class="media-preview-container"></div>
+
+        <div class="action-buttons">
+            <button type="button" class="btn btn-media" onclick="startVoiceRecognition()">🎙️ صوت</button>
+            <label class="btn btn-media" style="cursor:pointer;">
+                🖼️ صورة
+                <input type="file" accept="image/*" style="display:none;" onchange="handleMediaSelect(event, 'image')">
+            </label>
+            <label class="btn btn-media" style="cursor:pointer;">
+                🎥 فيديو
+                <input type="file" accept="video/*" style="display:none;" onchange="handleMediaSelect(event, 'video')">
+            </label>
+            <label class="btn btn-upload" style="cursor:pointer;">
+                📄 رفع (TXT, JSON, DOCX)
+                <input type="file" id="fileInput" accept=".txt,.json,.docx" style="display:none;" onchange="uploadFileNotes(event)">
+            </label>
+        </div>
+
+        <div class="action-buttons" style="margin-top:10px;">
+            <button type="button" class="btn btn-save" style="flex:1;" onclick="saveEntryToCloud()">💾 حفظ سحابي</button>
+            <button type="button" class="btn btn-download" style="flex:1;" onclick="downloadCurrentEntryLocal()">💾 حفظ محلي (.txt)</button>
+        </div>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>سجل اليوميات والوسائط 📚</h3>
+
+        <div class="bulk-actions">
+            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+            <label for="selectAll">تحديد الكل</label>
+            <button type="button" class="btn btn-danger" onclick="deleteSelectedEntries()">حذف المحدد</button>
+            <button type="button" class="btn btn-download" onclick="downloadAllEntriesLocal()">💾 تحميل السجل كاملاً (.txt)</button>
+        </div>
+
+        <div id="historyList">جاري تحميل المذكرات...</div>
+
+        <hr style="margin: 20px 0;">
+
+        <div style="background: #faf5ff; padding: 12px; border-radius: 8px; border: 1px solid #e9d5ff;">
+            <h4 style="color:#6a1b9a; margin:0 0 10px 0; text-align:center;">🧠 التحليل النفسي الذكي</h4>
+
+            <div class="api-box">
+                <label>مفتاح OpenAI</label>
+                <input type="text" id="geminiKeyInput" placeholder="المفتاح محفوظ بأمان في Vercel" disabled>
+                <div style="display:flex; gap:6px; margin-top:6px;">
+                    <button type="button" class="btn btn-save" style="flex:1;" onclick="saveGeminiKey()">إعداد المفتاح</button>
+                    <button type="button" class="btn btn-danger" onclick="clearGeminiKey()">مسح</button>
+                </div>
+                <small id="keyStatus" style="display:block; margin-top:4px; color:#666;"></small>
+            </div>
+
+            <button type="button" class="btn btn-global" style="width:100%;" onclick="runFullAIAnalysis()">تحليل شامل لكل المذكرات</button>
+
+            <div id="globalAnalysisResult" class="result-card hidden">
+                <strong>📑 التحليل الشامل:</strong>
+                <div id="globalAnalysisText" style="margin-top:6px;"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyDUaMmG9SBGoY0mZrtV7e-5I",
+    authDomain: "almofakera-a0767.firebaseapp.com",
+    databaseURL: "https://almofakera-a0767-default-rtdb.firebaseio.com/",
+    projectId: "almofakera-a0767",
+    storageBucket: "almofakera-a0767.appspot.com",
+    messagingSenderId: "838271980657",
+    appId: "1:838271980657:web:1cc91d49e5e13"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+
+// --- المتغيرات العامة ---
+let currentUser = null;
+let allEntriesMap = {};
+let currentAttachedMedia = null;
+
+// --- دوال مساعدة ---
+function sanitizeKey(key) {
+    return encodeURIComponent(key).replace(/\./g, '_');
+}
+
+function updateKeyStatus() {
+    const el = document.getElementById('keyStatus');
+    const input = document.getElementById('geminiKeyInput');
+    if (!el) return;
+
+    if (input) {
+        input.value = "";
+        input.placeholder = "مفتاح OpenAI محفوظ بأمان في Vercel";
+        input.disabled = true;
+    }
+
+    el.innerText = "✓ الاتصال بالذكاء الاصطناعي يتم عبر خادم Vercel بشكل آمن.";
+}
+
+// --- المصادقة ---
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+    if (tab === 'login') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('registerForm').classList.add('hidden');
+    } else {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('registerForm').classList.remove('hidden');
+        document.getElementById('loginForm').classList.add('hidden');
+    }
+}
+
+function handleRegister(e) {
+    if (e) e.preventDefault();
+
+    const name = document.getElementById('regName').value.trim();
+    const gender = document.getElementById('regGender').value;
+    const age = document.getElementById('regAge').value;
+    const pass = document.getElementById('regPass').value;
+
+    if (!name || !gender || !age || !pass) {
+        return alert("يرجى ملء جميع الحقول!");
+    }
+
+    const btn = document.getElementById('btnRegSubmit');
+    btn.innerText = "جاري الحفظ...";
+    btn.disabled = true;
+
+    const safeKey = sanitizeKey(name);
+    const newUser = { name, gender, age, pass };
+
+    db.ref('users/' + safeKey).set(newUser)
+        .then(() => {
+            alert('تم إنشاء الحساب بنجاح!');
+            loginUserSession(newUser);
+        })
+        .catch(err => {
+            alert("حدث خطأ أثناء التسجيل: " + err.message);
+        })
+        .finally(() => {
+            btn.innerText = "إنشاء الحساب والتسجيل";
+            btn.disabled = false;
+        });
+
+    return false;
+}
+
+function handleLogin(e) {
+    if (e) e.preventDefault();
+
+    const userInput = document.getElementById('loginUser').value.trim();
+    const passInput = document.getElementById('loginPass').value;
+    const btn = document.getElementById('btnLoginSubmit');
+
+    btn.innerText = "جاري التحقق...";
+    btn.disabled = true;
+
+    const safeKey = sanitizeKey(userInput);
+
+    db.ref('users/' + safeKey).once('value')
+        .then((snapshot) => {
+            const user = snapshot.val();
+
+            if (user && user.pass === passInput) {
+                loginUserSession(user);
+            } else {
+                alert('بيانات الدخول غير صحيحة!');
+            }
+        })
+        .catch(err => {
+            alert("خطأ في الاتصال بقاعدة البيانات: " + err.message);
+        })
+        .finally(() => {
+            btn.innerText = "دخول";
+            btn.disabled = false;
+        });
+
+    return false;
+}
+
+function loginUserSession(user) {
+    currentUser = user;
+    localStorage.setItem('logged_user', JSON.stringify(user));
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('welcomeMessage').innerText = `مرحباً، ${user.name}`;
+    updateKeyStatus();
+    loadCloudHistory();
+}
+
+function handleLogout() {
+    localStorage.removeItem('logged_user');
+    currentUser = null;
+    document.getElementById('appScreen').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+}
+
+// --- دوال المفتاح ---
+function saveGeminiKey() {
+    alert("مفتاح OpenAI محفوظ بأمان في Vercel، ولا يحتاج إلى إدخاله هنا.");
+}
+
+function clearGeminiKey() {
+    alert("المفتاح تتم إدارته من Vercel ولا يتم حفظه داخل المتصفح.");
+}
+
+// --- دوال الوسائط ---
+function startVoiceRecognition() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("ميزة التعرف على الصوت غير مدعومة في هذا المتصفح.");
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ar-SA';
+    recognition.interimResults = false;
+    recognition.start();
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        const input = document.getElementById('journalInput');
+        input.value = input.value ? input.value + " " + transcript : transcript;
+    };
+
+    recognition.onerror = function(event) {
+        console.error("Speech recognition error:", event.error);
+    };
+}
+
+function handleMediaSelect(event, type) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        currentAttachedMedia = {
+            type: type,
+            data: e.target.result,
+            name: file.name
+        };
+        displayMediaPreview(currentAttachedMedia);
+    };
+    reader.readAsDataURL(file);
+}
+
+function displayMediaPreview(media) {
+    const area = document.getElementById('mediaPreviewArea');
+
+    if (media.type === 'image') {
+        area.innerHTML = `<p style="margin:2px 0; font-size:12px;">🖼️ صورة مرفقة: ${media.name}</p><img src="${media.data}" alt="صورة مرفقة">`;
+    } else if (media.type === 'video') {
+        area.innerHTML = `<p style="margin:2px 0; font-size:12px;">🎥 فيديو مرفق: ${media.name}</p><video controls src="${media.data}"></video>`;
+    }
+}
+
+function uploadFileNotes(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const fileName = file.name.toLowerCase();
+    const input = document.getElementById('journalInput');
+
+    try {
+        if (fileName.endsWith('.txt')) {
+            const reader = new FileReader();
+            reader.onload = e => input.value = e.target.result;
+            reader.readAsText(file);
+        } else if (fileName.endsWith('.json')) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    input.value = typeof parsed === 'string'
+                        ? parsed
+                        : JSON.stringify(parsed, null, 2);
+                } catch (err) {
+                    alert("ملف JSON غير صالح!");
+                }
+            };
+            reader.readAsText(file);
+        } else if (fileName.endsWith('.docx')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    mammoth.extractRawText({ arrayBuffer: e.target.result })
+                        .then(result => {
+                            input.value = result.value;
+                        })
+                        .catch(() => alert("فشل قراءة ملف Word!"));
+                } catch (err) {
+                    alert("خطأ في قراءة الملف");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    } catch (err) {
+        alert("حدث خطأ أثناء رفع الملف");
+    }
+
+    event.target.value = null;
+}
+
+// --- حفظ المذكرات ---
+function saveEntryToCloud() {
+    if (!currentUser) return alert("يرجى تسجيل الدخول أولاً.");
+
+    let text = document.getElementById('journalInput').value.trim();
+    if (!text && !currentAttachedMedia) {
+        return alert("يرجى كتابة نص أو إرفاق ملف!");
+    }
+
+    const entryId = Date.now();
+    const safeKey = sanitizeKey(currentUser.name);
+
+    const entryData = {
+        id: entryId,
+        userName: currentUser.name,
+        date: new Date().toLocaleString('ar-SA'),
+        text: text,
+        media: currentAttachedMedia || null,
+        analysis: "لم يتم التحليل بعد."
+    };
+
+    db.ref('journals/' + safeKey + '/' + entryId).set(entryData)
+        .then(() => {
+            document.getElementById('journalInput').value = "";
+            document.getElementById('mediaPreviewArea').innerHTML = "";
+            currentAttachedMedia = null;
+            loadCloudHistory();
+            alert("تم الحفظ في السحابة بنجاح! 💾");
+        })
+        .catch(err => alert("فشل الحفظ: " + err.message));
+}
+
+function downloadCurrentEntryLocal() {
+    const text = document.getElementById('journalInput').value.trim();
+    if (!text) return alert("لا يوجد نص للحفظ محلياً!");
+
+    const fileName = `مذكرة_${new Date().toISOString().slice(0,10)}.txt`;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+function downloadAllEntriesLocal() {
+    const entries = Object.values(allEntriesMap);
+    if (entries.length === 0) return alert("لا توجد مذكرات لتحميلها!");
+
+    const fileName = `سجل_المذكرات_${currentUser.name}.txt`;
+    const formattedText = entries.map((e, index) => {
+        return `--- مذكرة [${index + 1}] ---\nالتاريخ: ${e.date}\nالنص: ${e.text || 'لا يوجد نص'}\nالتحليل: ${e.analysis || 'لا يوجد تحليل'}\n=========================================\n`;
+    }).join('\n');
+
+    const blob = new Blob([formattedText], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+// --- تحميل السجل من Firebase ---
+function loadCloudHistory() {
+    if (!currentUser) return;
+
+    const historyList = document.getElementById('historyList');
+    const safeKey = sanitizeKey(currentUser.name);
+
+    db.ref('journals/' + safeKey).on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        allEntriesMap = data;
+        const entries = Object.values(data).reverse();
+
+        if (entries.length === 0) {
+            historyList.innerHTML = "<p style='text-align:center; color:#777; font-size:13px;'>لا توجد مذكرات مسجلة.</p>";
+            return;
+        }
+
+        historyList.innerHTML = entries.map(item => {
+            let mediaHtml = "";
+
+            if (item.media) {
+                if (item.media.type === 'image') {
+                    mediaHtml = `<div class="media-preview-container"><img src="${item.media.data}" alt="صورة مرفقة"></div>`;
+                } else if (item.media.type === 'video') {
+                    mediaHtml = `<div class="media-preview-container"><video controls src="${item.media.data}"></video></div>`;
+                }
+            }
+
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <input type="checkbox" class="entry-checkbox" value="${item.id}">
+                            <span class="card-date">🕒 ${item.date}</span>
+                        </div>
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn btn-analyze" onclick="analyzeSingleEntry(${item.id})">🔍 تحليل</button>
+                            <button class="btn btn-save" onclick="editEntry(${item.id})">✏️ تعديل</button>
+                            <button class="btn btn-danger" onclick="deleteCloudEntry(${item.id})">حذف</button>
+                        </div>
+                    </div>
+                    ${item.text ? `<p style="margin:6px 0; font-size:13.5px;"><strong>المذكرة:</strong> ${item.text}</p>` : ''}
+                    ${mediaHtml}
+                    <div id="analysis-${item.id}" style="color:#004d40; font-size:12px; background:#f0fdf4; padding:6px 8px; border-radius:4px; margin-top:8px;">
+                        <strong>التحليل:</strong> ${item.analysis || 'لم يتم التحليل بعد.'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }, (error) => {
+        console.error("خطأ في تحميل السجل:", error);
+        historyList.innerHTML = "<p style='color:red;'>حدث خطأ في تحميل المذكرات</p>";
+    });
+}
+
+function editEntry(id) {
+    if (!allEntriesMap[id]) return;
+
+    const currentText = allEntriesMap[id].text || "";
+    const newText = prompt("تعديل المذكرة:", currentText);
+
+    if (newText !== null) {
+        const safeKey = sanitizeKey(currentUser.name);
+        db.ref('journals/' + safeKey + '/' + id + '/text').set(newText.trim())
+            .catch(err => alert("فشل التعديل: " + err.message));
+    }
+}
+
+function deleteCloudEntry(id) {
+    if (confirm("هل أنت متأكد من حذف هذه المذكرة؟")) {
+        const safeKey = sanitizeKey(currentUser.name);
+
+        db.ref('journals/' + safeKey + '/' + id).remove()
+            .then(() => loadCloudHistory())
+            .catch(err => alert("فشل الحذف: " + err.message));
+    }
+}
+
+// --- التحليل المحلي الاحتياطي ---
+function localSmartAnalysis(text, isGlobal, userInfo, allTexts) {
+    const t = (text || "").toLowerCase();
+    let mood = "محايد";
+    let stress = "منخفض";
+    let healthFlags = [];
+    let emotionScore = 5;
+
+    if (/(حزين|ضيق|قلق|خوف|توتر|هم|كآبة|اكتئاب|يأس|حزنت|ضاق|منهار)/.test(t)) {
+        mood = "سلبي مرتفع";
+        emotionScore = 3;
+        stress = "مرتفع";
+    }
+
+    if (/(سعيد|فرح|مرتاح|إيجابي|متفائل|جميل|رائع|حلو|طيب|نشط)/.test(t)) {
+        mood = "إيجابي مرتفع";
+        emotionScore = 8;
+        stress = "منخفض";
+    }
+
+    if (/(صداع|تعب|ألم|مرض|نوم|أرق|كآبة|ضغط|دوار|غثيان|خمول|إرهاق)/.test(t)) {
+        healthFlags.push("توجد مؤشرات صحية جسدية");
+    }
+
+    if (/(نوم سيئ|أرق|كابوس)/.test(t)) {
+        healthFlags.push("اضطرابات في النوم");
+    }
+
+    if (/(عمل كثير|ضغط عمل|مسؤوليات|إرهاق)/.test(t)) {
+        stress = "مرتفع";
+    }
+
+    if (!isGlobal) {
+        return `
+            <b>🧠 التحليل الفردي (محلي):</b><br>
+            - <b>الحالة المزاجية:</b> ${mood} (درجة ${emotionScore}/10)<br>
+            - <b>مستوى التوتر:</b> ${stress}<br>
+            - <b>مؤشرات صحية:</b> ${healthFlags.length ? healthFlags.join("، ") : "لا توجد مؤشرات ملحوظة"}<br>
+            - <b>النصيحة العاجلة:</b> ${stress === "مرتفع" ? "خذ 5 دقائق للتنفس العميق، واشرب ماءً، وخذ استراحة قصيرة." : "حافظ على روتينك الصحي اليومي."}<br>
+            - <b>توجيه إضافي:</b> ${mood === "سلبي مرتفع" ? "تحدث مع شخص تثق به، وتذكر أن هذه المشاعر قد تكون مؤقتة." : "استمر في تدوين مشاعرك الإيجابية."}
+        `;
+    }
+
+    const count = allTexts.length;
+    const negativeCount = allTexts.filter(x => /(حزين|ضيق|قلق|خوف|توتر|هم|كآبة|اكتئاب|يأس|كآبة)/.test((x || "").toLowerCase())).length;
+    const positiveCount = allTexts.filter(x => /(سعيد|فرح|مرتاح|إيجابي|متفائل|جميل|رائع|طيب|نشط)/.test((x || "").toLowerCase())).length;
+    const negPercent = count > 0 ? Math.round((negativeCount / count) * 100) : 0;
+    const posPercent = count > 0 ? Math.round((positiveCount / count) * 100) : 0;
+
+    return `
+        <b>📊 تحليل شامل (تراكمي - ${count} مذكرة):</b><br><br>
+        <b>1. الاتجاه العاطفي العام:</b> ${posPercent > negPercent ? "إيجابي مع وجود تحديات طبيعية." : negPercent > posPercent ? "يميل إلى السلبية ويستفيد من الدعم النفسي والرعاية الذاتية." : "متوازن مع تقلبات طبيعية."}<br>
+        <b>2. المؤشرات الصحية:</b> ${healthFlags.length ? "لوحظت مؤشرات صحية في بعض النصوص؛ ويُفضّل متابعة النوم والنشاط." : "لا توجد مؤشرات صحية واضحة من التحليل المحلي."}<br>
+        <b>3. نقاط القوة والضعف:</b> القوة: ${posPercent > 20 ? "وجود مواقف أو مشاعر إيجابية ملحوظة." : "يحتاج إلى تعزيز التفكير الإيجابي."} الضعف: ${negPercent > 20 ? "ميل إلى التفكير السلبي في بعض المذكرات." : "مستوى جيد من التوازن."}<br>
+        <b>4. التوصيات العملية:</b> ${negPercent > 30 ? "- خصص 15 دقيقة يومياً للتنفس الهادئ أو المشي.\n- اكتب 3 أشياء إيجابية حدثت لك يومياً." : "- حافظ على نشاطك البدني.\n- تواصل مع الأصدقاء أو العائلة بانتظام."}<br>
+        <b>5. خطة وقائية (7 أيام):</b><br>
+        - سجل مزاجك يومياً (1-10).<br>
+        - مارس 10 دقائق من التأمل أو المشي.<br>
+        - راجع تقدمك في نهاية الأسبوع.<br>
+        <small>💡 هذا تحليل أولي محلي وليس تشخيصاً طبياً. للتحليل الأعمق استخدم OpenAI.</small>
+    `;
+}
+
+// --- الاتصال بالذكاء الاصطناعي عبر Vercel ---
+async function callGeminiAI(promptText, rawTextForLocal, isGlobal = false, allTexts = []) {
+    const customPrompt = `
+أنت خبير في التحليل النفسي الوقائي والرفاه النفسي، ولست طبيباً ولا تقوم بالتشخيص الطبي.
+
+حلل هذه المذكرة بعمق وبطريقة منظمة وآمنة:
+
+البيانات:
+${(promptText || "").slice(0, 3000)}
+
+النص الكامل:
+${(rawTextForLocal || "").slice(0, 4000)}
+
+${isGlobal ? `هذه مجموعة مذكرات لنفس المستخدم. عددها: ${allTexts.length}. حلل الأنماط العامة عبر المذكرات دون تشخيص.` : "حلل هذه المذكرة بشكل فردي."}
+
+أعد التحليل باللغة العربية ويشمل:
+- المشاعر الظاهرة.
+- مستوى التوتر أو الضغط المحتمل.
+- المؤشرات الصحية أو النفسية التي تستحق الانتباه، دون تشخيص.
+- الأسباب أو العوامل المحتملة التي تظهر من النص.
+- نوع أسلوب التفكير الظاهر إن أمكن استنتاجه بحذر.
+- 3 توصيات عملية مناسبة.
+- خطة وقائية قصيرة من 3 خطوات.
+
+كن دقيقاً ومتوازناً، ولا تعتبر استنتاجاتك تشخيصاً طبياً.
+`;
+
+    try {
+        const response = await fetch("/api/analyze", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ prompt: customPrompt })
+        });
+
+        let data = {};
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            throw new Error("الخادم أعاد استجابة غير مفهومة.");
+        }
+
+        if (!response.ok) {
+            throw new Error(data?.error || "فشل الاتصال بخدمة OpenAI.");
+        }
+
+        if (data && data.text) {
+            return data.text.replace(/\n/g, "<br>") +
+                `<br><br>
+                <div style='background:#e8f5e9;padding:8px;border-radius:6px;border:1px solid #4caf50'>
+                    <b style='color:#2e7d32'>✓ تم التحليل بواسطة OpenAI</b>
+                </div>`;
+        }
+
+        throw new Error("لم يصل نص التحليل من الخادم.");
+    } catch (error) {
+        console.error("OpenAI Error:", error);
+
+        return localSmartAnalysis(
+            rawTextForLocal,
+            isGlobal,
+            currentUser,
+            allTexts
+        ) +
+            `<br><br>
+            <small style='color:#d32f2f'>
+            ⚠️ تعذر الاتصال بالذكاء الاصطناعي: ${error.message}
+            </small>`;
+    }
+}
+
+async function analyzeSingleEntry(id) {
+    const targetDiv = document.getElementById(`analysis-${id}`);
+    if (!targetDiv) return;
+
+    targetDiv.innerHTML = "جاري التحليل...";
+
+    const item = allEntriesMap[id];
+    if (!item) {
+        targetDiv.innerHTML = "تعذر العثور على المذكرة.";
+        return;
+    }
+
+    let promptText = `حلل هذه المذكرة: ${item.text || ''}`;
+    if (item.media) promptText += ` [ملف مرفق: ${item.media.name}]`;
+
+    const analysis = await callGeminiAI(promptText, item.text, false, []);
+    const safeKey = sanitizeKey(currentUser.name);
+
+    db.ref('journals/' + safeKey + '/' + id + '/analysis').set(analysis)
+        .catch(err => console.error("فشل حفظ التحليل:", err));
+
+    targetDiv.innerHTML = "<strong>التحليل:</strong> " + analysis;
+}
+
+async function runFullAIAnalysis() {
+    const entries = Object.values(allEntriesMap);
+    if (entries.length === 0) return alert("لا توجد مذكرات للتحليل!");
+
+    const resultCard = document.getElementById('globalAnalysisResult');
+    const resultText = document.getElementById('globalAnalysisText');
+    resultCard.classList.remove('hidden');
+    resultText.innerHTML = "جاري إجراء التحليل الشامل...";
+
+    const combinedText = entries.map((e, index) => {
+        let info = `مذكرة ${index + 1} (${e.date}): ${e.text || ''}`;
+        if (e.media) info += ` [ملف: ${e.media.type}]`;
+        return info;
+    }).join("\n");
+
+    const allTexts = entries.map(e => e.text || "");
+    const prompt = `قم بتحليل شامل للمذكرات التالية للمستخدم ${currentUser.name} (العمر ${currentUser.age}):\n${combinedText}`;
+
+    const responseText = await callGeminiAI(
+        prompt,
+        combinedText,
+        true,
+        allTexts
+    );
+
+    resultText.innerHTML = responseText;
+}
+
+// --- الحذف الجماعي ---
+function toggleSelectAll(master) {
+    document.querySelectorAll('.entry-checkbox').forEach(cb => {
+        cb.checked = master.checked;
+    });
+}
+
+function deleteSelectedEntries() {
+    const selected = Array.from(document.querySelectorAll('.entry-checkbox:checked'))
+        .map(cb => cb.value);
+
+    if (selected.length === 0) return alert("لم تختر أي مذكرة!");
+
+    if (confirm(`هل أنت متأكد من حذف ${selected.length} مذكرة؟`)) {
+        const safeKey = sanitizeKey(currentUser.name);
+        const promises = selected.map(id =>
+            db.ref('journals/' + safeKey + '/' + id).remove()
+        );
+
+        Promise.all(promises)
+            .then(() => {
+                loadCloudHistory();
+                const master = document.getElementById('selectAll');
+                if (master) master.checked = false;
+                alert("تم حذف المذكرات المحددة.");
+            })
+            .catch(err => alert("فشل الحذف: " + err.message));
+    }
+}
+
+// --- تهيئة الصفحة ---
+window.onload = function() {
+    const savedUser = localStorage.getItem('logged_user');
+
+    if (savedUser) {
+        try {
+            loginUserSession(JSON.parse(savedUser));
+        } catch (e) {
+            localStorage.removeItem('logged_user');
+        }
+    }
+
+    updateKeyStatus();
+};
+</script>
+
+</body>
+</html>
